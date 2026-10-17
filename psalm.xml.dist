@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<psalm
+    cacheDirectory="./.psalm-cache"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+    errorLevel="1"
+    phpVersion="8.5"
+    findUnusedPsalmSuppress="true"
+    findUnusedCode="true"
+>
+    <projectFiles>
+        <directory name="src"/>
+        <directory name="test"/>
+        <directory name="migrations"/>
+        <ignoreFiles>
+            <directory name="vendor"/>
+        </ignoreFiles>
+    </projectFiles>
+    <issueHandlers>
+        <DeprecatedMethod>
+            <errorLevel type="suppress">
+                <directory name="migrations"/>
+            </errorLevel>
+        </DeprecatedMethod>
+        <MixedArgument>
+            <errorLevel type="suppress">
+                <file name="test/TestCase.php"/>
+            </errorLevel>
+        </MixedArgument>
+        <PossiblyUnusedMethod>
+            <errorLevel type="suppress">
+                <directory name="src/Console"/>
+                <directory name="src/Http"/>
+                <directory name="src/Doctrine"/>
+                <file name="src/TenantSwitcher.php"/>
+                <file name="src/DbalTenantRepository.php"/>
+            </errorLevel>
+        </PossiblyUnusedMethod>
+        <UnusedClass>
+            <errorLevel type="suppress">
+                <directory name="migrations"/>
+            </errorLevel>
+        </UnusedClass>
+    </issueHandlers>
+    <plugins>
+        <pluginClass class="Psalm\PhpUnitPlugin\Plugin"/>
+    </plugins>
+</psalm>

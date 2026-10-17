@@ -1,0 +1,91 @@
+{
+    "name": "ssmiff/mezzio-tenancy",
+    "description": "Database-per-tenant multi-tenancy for Mezzio on top of ssmiff/mezzio-doctrine: tenant resolution, runtime connection switching and --tenant on Doctrine commands.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "mezzio",
+        "laminas",
+        "doctrine",
+        "multi-tenancy",
+        "tenancy"
+    ],
+    "homepage": "https://github.com/ssmiff/mezzio-tenancy",
+    "authors": [
+        {
+            "name": "Scott Smith",
+            "email": "scott@ssmiff.uk"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/ssmiff/mezzio-tenancy/issues",
+        "source": "https://github.com/ssmiff/mezzio-tenancy"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/ssmiff/mezzio-container-helpers"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/ssmiff/mezzio-doctrine"
+        }
+    ],
+    "require": {
+        "php": "~8.5.0",
+        "doctrine/dbal": "^4.2",
+        "laminas/laminas-servicemanager": "^3.22",
+        "psr/container": "^1.1 || ^2.0",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^1.1 || ^2.0",
+        "psr/http-server-handler": "^1.0",
+        "psr/http-server-middleware": "^1.0",
+        "ssmiff/mezzio-container-helpers": "^0.1",
+        "ssmiff/mezzio-doctrine": "^0.2",
+        "symfony/console": "^6.4 || ^7.0",
+        "symfony/process": "^6.4 || ^7.0 || ^8.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "laminas/laminas-config-aggregator": "^1.18",
+        "laminas/laminas-diactoros": "^3.8",
+        "phpunit/phpunit": "^11.5",
+        "psalm/plugin-phpunit": "^0.19.5",
+        "squizlabs/php_codesniffer": "^4.0",
+        "symfony/filesystem": "^7.2 || ^8.0",
+        "vimeo/psalm": "^6.13"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ssmiff\\MezzioTenancy\\": "src/",
+            "Ssmiff\\MezzioTenancy\\Migrations\\": "migrations/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ssmiff\\MezzioTenancy\\Test\\": "test/"
+        }
+    },
+    "extra": {
+        "laminas": {
+            "config-provider": "Ssmiff\\MezzioTenancy\\ConfigProvider"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "scripts": {
+        "check": [
+            "@cs-check",
+            "@static-analysis",
+            "@test"
+        ],
+        "cs-check": [
+            "php-cs-fixer fix --dry-run --diff",
+            "phpcs"
+        ],
+        "cs-fix": "php-cs-fixer fix",
+        "static-analysis": "psalm --no-cache --stats",
+        "test": "phpunit --colors=always"
+    }
+}
