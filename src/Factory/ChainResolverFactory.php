@@ -20,8 +20,11 @@ use function is_array;
 final readonly class ChainResolverFactory implements FactoryInterface
 {
     #[Override]
-    public function __invoke(ContainerInterface $container, $requestedName, ?array $options = null): ChainResolver
-    {
+    public function __invoke(
+        ContainerInterface $container,
+        string $requestedName,
+        ?array $options = null,
+    ): ChainResolver {
         return new ChainResolver(array_map(
             static fn(string $id): TenantResolver => Services::get($container, TenantResolver::class, $id),
             self::ids(Config::get($container, 'tenancy.resolvers', [])),

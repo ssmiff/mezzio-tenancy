@@ -16,8 +16,12 @@ use function is_object;
 final readonly class AddTenantOption implements DelegatorFactoryInterface
 {
     #[Override]
-    public function __invoke(ContainerInterface $container, $name, callable $callback, ?array $options = null): object
-    {
+    public function __invoke(
+        ContainerInterface $container,
+        string $name,
+        callable $callback,
+        ?array $options = null,
+    ): object {
         return self::withTenantOption($callback());
     }
 
