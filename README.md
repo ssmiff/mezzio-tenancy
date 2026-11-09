@@ -62,15 +62,8 @@ return [
 
 The module itself configures: the `tenant` connection, the shipped landlord migration, and the console listener.
 
-The landlord migration is registered for a connection called `landlord`. With another `landlord_connection`, register it
-for that name yourself:
-
-```php
-'doctrine' => ['migrations' => ['connections' => [
-    'central' => ['migrations_paths' => Ssmiff\MezzioTenancy\ConfigProvider::MIGRATIONS_PATHS],
-]]],
-'tenancy'  => ['landlord_connection' => 'central'],
-```
+The landlord migrations follow `tenancy.landlord_connection`: they are supplied to whichever connection it names (through
+mezzio-doctrine's `migrations.paths_providers`), so `migrations:migrate --conn=<that name>` runs them.
 
 ## Setting up the landlord database
 

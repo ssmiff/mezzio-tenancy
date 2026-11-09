@@ -41,7 +41,7 @@
         "psr/http-server-handler": "^1.0",
         "psr/http-server-middleware": "^1.0",
         "ssmiff/mezzio-container-helpers": "^0.1",
-        "ssmiff/mezzio-doctrine": "^0.2 || ^0.3",
+        "ssmiff/mezzio-doctrine": "^0.3.1",
         "symfony/console": "^6.4 || ^7.0",
         "symfony/process": "^6.4 || ^7.0 || ^8.0"
     },

@@ -106,12 +106,7 @@ final class ConsoleTest extends TestCase
     public function testTheLandlordConnectionCanHaveAnotherName(): void
     {
         $container = $this->container([
-            'doctrine' => [
-                'connections' => ['central' => ['driver' => 'pdo_sqlite', 'path' => 'central.sqlite']],
-                'migrations'  => [
-                    'connections' => ['central' => ['migrations_paths' => ConfigProvider::MIGRATIONS_PATHS]],
-                ],
-            ],
+            'doctrine' => ['connections' => ['central' => ['driver' => 'pdo_sqlite', 'path' => 'central.sqlite']]],
             'tenancy'  => ['landlord_connection' => 'central'],
         ], landlordSchema: false);
 

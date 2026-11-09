@@ -16,6 +16,7 @@ use Ssmiff\MezzioTenancy\Console\TenancyMigrateCommand;
 use Ssmiff\MezzioTenancy\Console\TenantCreateCommand;
 use Ssmiff\MezzioTenancy\Console\TenantListCommand;
 use Ssmiff\MezzioTenancy\Console\TenantOptionListener;
+use Ssmiff\MezzioTenancy\Doctrine\LandlordMigrations;
 use Ssmiff\MezzioTenancy\Doctrine\TenantConnectionParams;
 use Ssmiff\MezzioTenancy\Factory\ChainResolverFactory;
 use Ssmiff\MezzioTenancy\Http\TenantMiddleware;
@@ -30,10 +31,7 @@ use function array_values;
 
 final readonly class ConfigProvider
 {
-    /**
-     * The landlord migrations, for doctrine.migrations.connections.<name>.migrations_paths. They are registered
-     * for the `landlord` connection by default; register them yourself under another landlord_connection.
-     */
+    /** The landlord migrations, supplied to the landlord connection by LandlordMigrations. */
     public const array MIGRATIONS_PATHS = ['Ssmiff\\MezzioTenancy\\Migrations' => __DIR__ . '/../migrations'];
 
     private const array COMMANDS = [
@@ -67,12 +65,8 @@ final readonly class ConfigProvider
                 'connections' => [
                     Connections::TENANT => ['params_provider' => TenantConnectionParams::class],
                 ],
-                'migrations' => [
-                    'connections' => [
-                        // Under another landlord_connection, register MIGRATIONS_PATHS for that name yourself.
-                        Connections::LANDLORD => ['migrations_paths' => self::MIGRATIONS_PATHS],
-                    ],
-                ],
+                // Supplies the landlord migrations to the connection named by tenancy.landlord_connection.
+                'migrations' => ['paths_providers' => [LandlordMigrations::class]],
                 'console_listeners' => [TenantOptionListener::class => 100],
             ],
         ];
@@ -97,6 +91,7 @@ final readonly class ConfigProvider
             ChainResolver::class => ChainResolverFactory::class,
             TenantMiddleware::class => AttributeFactory::class,
             TenantConnectionParams::class => AttributeFactory::class,
+            LandlordMigrations::class => AttributeFactory::class,
             TenantOptionListener::class => AttributeFactory::class,
         ];
 
