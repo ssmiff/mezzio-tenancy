@@ -62,8 +62,30 @@ return [
 
 The module itself configures: the `tenant` connection, the shipped landlord migration, and the console listener.
 
-The landlord migrations follow `tenancy.landlord_connection`: they are supplied to whichever connection it names (through
-mezzio-doctrine's `migrations.paths_providers`), so `migrations:migrate --conn=<that name>` runs them.
+### Another landlord connection name
+
+Name the connection what you like and point `tenancy.landlord_connection` at it. The landlord migrations follow the
+setting, so there is nothing else to register:
+
+```php
+return [
+    'doctrine' => [
+        'connections' => [
+            'central' => ['driver' => 'pdo_pgsql', 'host' => '...', 'dbname' => 'central', 'user' => '...', 'password' => '...'],
+        ],
+    ],
+    'tenancy' => [
+        'landlord_connection' => 'central',
+    ],
+];
+```
+
+```
+vendor/bin/laminas migrations:migrate --conn=central
+```
+
+Migrations of your own for that connection go under `doctrine.migrations.connections.central.migrations_paths` as usual;
+the landlord migrations are added to them, not replaced.
 
 ## Setting up the landlord database
 
