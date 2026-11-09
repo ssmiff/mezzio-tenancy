@@ -30,6 +30,12 @@ use function array_values;
 
 final readonly class ConfigProvider
 {
+    /**
+     * The landlord migrations, for doctrine.migrations.connections.<name>.migrations_paths. They are registered
+     * for the `landlord` connection by default; register them yourself under another landlord_connection.
+     */
+    public const array MIGRATIONS_PATHS = ['Ssmiff\\MezzioTenancy\\Migrations' => __DIR__ . '/../migrations'];
+
     private const array COMMANDS = [
         'tenancy:create' => TenantCreateCommand::class,
         'tenancy:list' => TenantListCommand::class,
@@ -49,6 +55,8 @@ final readonly class ConfigProvider
             'dependencies' => $this->dependencies(),
             'laminas-cli' => ['commands' => self::COMMANDS],
             'tenancy' => [
+                // The doctrine.connections entry holding the tenants table.
+                'landlord_connection' => Connections::LANDLORD,
                 'resolvers' => [HeaderResolver::class, SubdomainResolver::class],
                 'header' => 'X-Tenant',
                 'base_domain' => null,
@@ -61,9 +69,8 @@ final readonly class ConfigProvider
                 ],
                 'migrations' => [
                     'connections' => [
-                        Connections::LANDLORD => [
-                            'migrations_paths' => ['Ssmiff\\MezzioTenancy\\Migrations' => __DIR__ . '/../migrations'],
-                        ],
+                        // Under another landlord_connection, register MIGRATIONS_PATHS for that name yourself.
+                        Connections::LANDLORD => ['migrations_paths' => self::MIGRATIONS_PATHS],
                     ],
                 ],
                 'console_listeners' => [TenantOptionListener::class => 100],

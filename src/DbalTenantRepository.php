@@ -8,7 +8,9 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Types\Types;
 use Override;
-use Ssmiff\MezzioDoctrine\Attribute\UseConnection;
+use InvalidArgumentException;
+use Ssmiff\MezzioContainerHelpers\Attribute\ConfigValue;
+use Ssmiff\MezzioDoctrine\Registry;
 
 use function array_combine;
 use function array_filter;
@@ -25,10 +27,19 @@ use const JSON_THROW_ON_ERROR;
 
 final readonly class DbalTenantRepository implements TenantRepository
 {
+    private Connection $landlord;
+
     public function __construct(
-        #[UseConnection(Connections::LANDLORD)]
-        private Connection $landlord,
-    ) {}
+        Registry $registry,
+        #[ConfigValue('tenancy.landlord_connection', Connections::LANDLORD)]
+        string $connection,
+    ) {
+        if ($connection === '') {
+            throw new InvalidArgumentException('Config "tenancy.landlord_connection" must name a doctrine connection.');
+        }
+
+        $this->landlord = $registry->connection($connection);
+    }
 
     #[Override]
     public function findBySlug(string $slug): ?Tenant

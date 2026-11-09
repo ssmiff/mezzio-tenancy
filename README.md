@@ -19,7 +19,7 @@ You also need a PSR-17 `ResponseFactoryInterface` in the container (Mezzio provi
 
 ## Concepts
 
-- The **landlord** database holds the list of tenants. It is a normal mezzio-doctrine connection called `landlord`, which you define. Tenants are plain `Tenant` value objects read and written with DBAL by `DbalTenantRepository`; no ORM entity or entity manager is involved. Replace it by providing your own `TenantRepository`.
+- The **landlord** database holds the list of tenants. It is a normal mezzio-doctrine connection, called `landlord` unless you set `tenancy.landlord_connection`, which you define. Tenants are plain `Tenant` value objects read and written with DBAL by `DbalTenantRepository`; no ORM entity or entity manager is involved. Replace it by providing your own `TenantRepository`.
 - Each **tenant** has its own database. The connection and entity manager for it are both called `tenant`. The module defines the connection; you map your tenant entities and migrations onto it.
 - `tenant` is a *dynamic* connection: its parameters come from the active tenant, so one name serves every tenant.
 
@@ -41,6 +41,7 @@ return [
         ],
     ],
     'tenancy' => [
+        'landlord_connection' => 'landlord',
         'resolvers' => [Ssmiff\MezzioTenancy\Resolver\HeaderResolver::class, Ssmiff\MezzioTenancy\Resolver\SubdomainResolver::class],
         'header' => 'X-Tenant',
         'base_domain' => 'example.com',
@@ -52,6 +53,7 @@ return [
 
 | Key | Meaning |
 | --- | --- |
+| `tenancy.landlord_connection` | the `doctrine.connections` entry holding the tenants table (default `landlord`) |
 | `tenancy.resolvers` | resolver service ids, tried in order; the first to name a tenant wins |
 | `tenancy.header` | header read by `HeaderResolver` (default `X-Tenant`) |
 | `tenancy.base_domain` | `SubdomainResolver` takes the single label below it: `acme.example.com` is tenant `acme`. Unset disables it |
@@ -60,10 +62,20 @@ return [
 
 The module itself configures: the `tenant` connection, the shipped landlord migration, and the console listener.
 
+The landlord migration is registered for a connection called `landlord`. With another `landlord_connection`, register it
+for that name yourself:
+
+```php
+'doctrine' => ['migrations' => ['connections' => [
+    'central' => ['migrations_paths' => Ssmiff\MezzioTenancy\ConfigProvider::MIGRATIONS_PATHS],
+]]],
+'tenancy'  => ['landlord_connection' => 'central'],
+```
+
 ## Setting up the landlord database
 
 ```
-vendor/bin/laminas migrations:migrate --conn=landlord
+vendor/bin/laminas migrations:migrate --conn=landlord      # or your landlord_connection
 vendor/bin/laminas tenancy:create acme "Acme Ltd" --param=dbname=acme_db
 vendor/bin/laminas tenancy:list
 ```

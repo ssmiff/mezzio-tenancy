@@ -7,6 +7,7 @@ namespace Ssmiff\MezzioTenancy\Test;
 use Laminas\ServiceManager\ServiceManager;
 use Ssmiff\MezzioContainerHelpers\Services;
 use Ssmiff\MezzioDoctrine\ConfigProvider as DoctrineConfigProvider;
+use Ssmiff\MezzioDoctrine\Registry;
 use Ssmiff\MezzioTenancy\ConfigProvider;
 use Ssmiff\MezzioTenancy\Connections;
 use Ssmiff\MezzioTenancy\TenantRepository;
@@ -100,6 +101,45 @@ final class ConsoleTest extends TestCase
         self::assertSame('acme', $tenant->slug);
         self::assertTrue($tenant->active);
         self::assertSame(['path' => $this->base . '/tenants/acme.sqlite'], $tenant->params);
+    }
+
+    public function testTheLandlordConnectionCanHaveAnotherName(): void
+    {
+        $container = $this->container([
+            'doctrine' => [
+                'connections' => ['central' => ['driver' => 'pdo_sqlite', 'path' => 'central.sqlite']],
+                'migrations'  => [
+                    'connections' => ['central' => ['migrations_paths' => ConfigProvider::MIGRATIONS_PATHS]],
+                ],
+            ],
+            'tenancy'  => ['landlord_connection' => 'central'],
+        ], landlordSchema: false);
+
+        self::assertSame(
+            0,
+            $this->app($container)->run(['command' => 'migrations:migrate', '--conn' => 'central', '-n' => true]),
+        );
+
+        $this->addTenant($container, 'acme');
+
+        self::assertNotNull(Services::get($container, TenantRepository::class)->findBySlug('acme'));
+
+        $registry = Services::get($container, Registry::class);
+        self::assertTrue($registry->connection('central')->createSchemaManager()->tablesExist(['tenants']));
+        $landlord = $registry->connection(Connections::LANDLORD);
+        self::assertFalse($landlord->createSchemaManager()->tablesExist(['tenants']));
+
+        $list = $this->app($container);
+        self::assertSame(0, $list->run(['command' => 'tenancy:list']));
+        self::assertStringContainsString('acme', $list->getDisplay());
+    }
+
+    public function testAnEmptyLandlordConnectionNameIsRefused(): void
+    {
+        $this->expectExceptionMessage('tenancy.landlord_connection');
+
+        $container = $this->container(['tenancy' => ['landlord_connection' => '']], landlordSchema: false);
+        Services::get($container, TenantRepository::class);
     }
 
     public function testTenantConnectionRequiresATenant(): void
