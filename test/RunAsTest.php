@@ -119,6 +119,22 @@ final class RunAsTest extends TestCase
         self::assertStringContainsString('Database\Migrations\Tenant', $tester->getDisplay());
     }
 
+    public function testRunSqlRunsOnTheTenantsDatabase(): void
+    {
+        $direct = $this->console(['command' => 'db:run-sql', 'sql' => 'PRAGMA database_list', '--tenant' => 'acme']);
+        self::assertStringContainsString('acme.sqlite', $direct->getDisplay());
+
+        $runAs = $this->console([
+            'command' => 'tenancy:run-as',
+            'slug'    => 'acme',
+            'cmd'     => ['db:run-sql', 'PRAGMA database_list'],
+        ]);
+        self::assertStringContainsString('acme.sqlite', $runAs->getDisplay());
+
+        $landlord = $this->console(['command' => 'db:run-sql', 'sql' => 'PRAGMA database_list']);
+        self::assertStringContainsString('landlord.sqlite', $landlord->getDisplay());
+    }
+
     public function testATenantOptionOfItsOwnIsRefused(): void
     {
         $this->expectException(InvalidArgumentException::class);
