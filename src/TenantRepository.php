@@ -12,4 +12,7 @@ interface TenantRepository
     public function all(): array;
 
     public function add(Tenant $tenant): void;
+
+    /** Removes the tenant from the landlord database; false when there was none. */
+    public function remove(string $slug): bool;
 }

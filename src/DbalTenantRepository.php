@@ -77,6 +77,12 @@ final readonly class DbalTenantRepository implements TenantRepository
         );
     }
 
+    #[Override]
+    public function remove(string $slug): bool
+    {
+        return $this->landlord->delete('tenants', ['slug' => $slug]) > 0;
+    }
+
     private function select(): QueryBuilder
     {
         return $this->landlord->createQueryBuilder()->select('slug', 'name', 'params', 'active')->from('tenants');

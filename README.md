@@ -96,8 +96,95 @@ vendor/bin/laminas tenancy:list
 ```
 
 A tenant is a slug (lowercase letters, digits, dashes), a name, an `active` flag and `params`: the DBAL parameters for its database, merged over `connection_template`.
-Create the tenant's database itself yourself (SQLite files are created on first use).
+Without a provisioner, create the tenant's database yourself (SQLite files are created on first use).
 Database credentials live in the landlord table, so protect that database accordingly.
+
+## Provisioning tenant storage
+
+Set `tenancy.provisioner` and `tenancy:create` creates each tenant's storage, named `<prefix><slug>` (dashes become
+underscores), and saves the parameters that point at it; `tenancy:delete --drop` destroys it. Three provisioners ship:
+
+**A database per tenant** (MySQL, MariaDB, PostgreSQL). `CREATE DATABASE tenant_acme`; the tenant gets `dbname`:
+
+```php
+'tenancy' => [
+    'provisioner'             => Ssmiff\MezzioTenancy\Provisioning\DatabaseProvisioner::class,
+    'prefix'                  => 'tenant_',
+    'provisioning_connection' => 'admin', // a user allowed to CREATE/DROP DATABASE; null uses the landlord connection
+    'connection_template'     => ['driver' => 'pdo_pgsql', 'host' => 'db', 'user' => 'app', 'password' => '...'],
+],
+```
+
+**A schema per tenant** (PostgreSQL). `CREATE SCHEMA tenant_acme` in one database; the tenant gets a `search_path`
+of its schema, so its tables and migrations version table live there. `provisioning_connection` and
+`connection_template` both point at that database:
+
+```php
+'tenancy' => [
+    'provisioner'         => Ssmiff\MezzioTenancy\Provisioning\SchemaProvisioner::class,
+    'connection_template' => ['driver' => 'pdo_pgsql', 'host' => 'db', 'dbname' => 'app', 'user' => 'app', 'password' => '...'],
+],
+```
+
+**An SQLite file per tenant**. `data/tenants/tenant_acme.sqlite`; the tenant gets `path`:
+
+```php
+'tenancy' => [
+    'provisioner'         => Ssmiff\MezzioTenancy\Provisioning\SqliteFileProvisioner::class,
+    'sqlite_directory'    => 'data/tenants', // relative to doctrine.base_path
+    'connection_template' => ['driver' => 'pdo_sqlite'],
+],
+```
+
+Then:
+
+```
+vendor/bin/laminas tenancy:create acme "Acme Ltd"        # creates tenant_acme and registers it
+vendor/bin/laminas tenancy:migrate --only=acme           # builds its tables
+vendor/bin/laminas tenancy:delete acme                   # unregisters it; the data stays
+vendor/bin/laminas tenancy:delete acme --drop            # unregisters it and destroys tenant_acme (asks for the slug)
+```
+
+- `tenancy:create --no-provision` registers the tenant under the same name without creating anything, for storage that
+  already exists. `--param` adds or overrides parameters; one that would point away from the created storage needs
+  `--no-provision`.
+- `--drop` asks you to type the slug, or takes `--force` (required when not interactive). It only destroys a tenant
+  whose saved parameters still match what the provisioner would create for it; anything else is refused.
+- If registering fails after the storage was created, the storage is dropped again.
+
+### Your own provisioner
+
+Implement `Ssmiff\MezzioTenancy\Provisioning\TenantProvisioner` (`params()`, `create()`, `drop()`), register it as a
+service and name it in `tenancy.provisioner`. `TenantName::for($prefix, $slug)` gives the usual safe name:
+
+```php
+final readonly class ManagedDatabaseProvisioner implements TenantProvisioner
+{
+    public function __construct(private CloudDatabases $api, private string $prefix = 'tenant_') {}
+
+    public function params(string $slug): array
+    {
+        return ['dbname' => TenantName::for($this->prefix, $slug)];
+    }
+
+    public function create(string $slug): void
+    {
+        $this->api->createDatabase(TenantName::for($this->prefix, $slug));
+    }
+
+    public function drop(string $slug): void
+    {
+        $this->api->deleteDatabase(TenantName::for($this->prefix, $slug));
+    }
+}
+```
+
+| Key | Meaning |
+| --- | --- |
+| `tenancy.provisioner` | service id of the `TenantProvisioner`; `null` (default) for none |
+| `tenancy.prefix` | put in front of the slug in storage names (default `tenant_`); lowercase letters, digits, `_` |
+| `tenancy.provisioning_connection` | connection the database and schema provisioners run DDL on (default: the landlord connection) |
+| `tenancy.sqlite_directory` | where `SqliteFileProvisioner` puts files, relative to `doctrine.base_path` (default `data/tenants`) |
 
 ## Handling requests
 
@@ -158,7 +245,8 @@ vendor/bin/laminas orm:validate-schema --tenant=acme
 
 | Command | |
 | --- | --- |
-| `tenancy:create <slug> <name> [--param=key=value ...]` | register a tenant |
+| `tenancy:create <slug> <name> [--param=key=value ...] [--no-provision]` | register a tenant and, with a provisioner, create its storage |
+| `tenancy:delete <slug> [--drop [--force]]` | unregister a tenant; with `--drop`, destroy its storage |
 | `tenancy:list` | list tenants |
 | `tenancy:migrate [--only=<slug>]` | run `migrations:migrate --tenant=<slug>` for each active tenant, one process per tenant |
 

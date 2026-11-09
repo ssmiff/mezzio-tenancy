@@ -14,12 +14,19 @@ use Ssmiff\MezzioDoctrine\ServiceId;
 use Ssmiff\MezzioTenancy\Console\AddTenantOption;
 use Ssmiff\MezzioTenancy\Console\TenancyMigrateCommand;
 use Ssmiff\MezzioTenancy\Console\TenantCreateCommand;
+use Ssmiff\MezzioTenancy\Console\TenantDeleteCommand;
 use Ssmiff\MezzioTenancy\Console\TenantListCommand;
 use Ssmiff\MezzioTenancy\Console\TenantOptionListener;
 use Ssmiff\MezzioTenancy\Doctrine\LandlordMigrations;
 use Ssmiff\MezzioTenancy\Doctrine\TenantConnectionParams;
 use Ssmiff\MezzioTenancy\Factory\ChainResolverFactory;
+use Ssmiff\MezzioTenancy\Factory\ProvisionerFactory;
+use Ssmiff\MezzioTenancy\Factory\ProvisioningFactory;
 use Ssmiff\MezzioTenancy\Http\TenantMiddleware;
+use Ssmiff\MezzioTenancy\Provisioning\DatabaseProvisioner;
+use Ssmiff\MezzioTenancy\Provisioning\Provisioning;
+use Ssmiff\MezzioTenancy\Provisioning\SchemaProvisioner;
+use Ssmiff\MezzioTenancy\Provisioning\SqliteFileProvisioner;
 use Ssmiff\MezzioTenancy\Resolver\ChainResolver;
 use Ssmiff\MezzioTenancy\Resolver\HeaderResolver;
 use Ssmiff\MezzioTenancy\Resolver\SubdomainResolver;
@@ -36,6 +43,7 @@ final readonly class ConfigProvider
 
     private const array COMMANDS = [
         'tenancy:create' => TenantCreateCommand::class,
+        'tenancy:delete' => TenantDeleteCommand::class,
         'tenancy:list' => TenantListCommand::class,
         'tenancy:migrate' => TenancyMigrateCommand::class,
     ];
@@ -55,6 +63,15 @@ final readonly class ConfigProvider
             'tenancy' => [
                 // The doctrine.connections entry holding the tenants table.
                 'landlord_connection' => Connections::LANDLORD,
+                // Creates and drops tenant storage for tenancy:create and tenancy:delete: a service id such as
+                // DatabaseProvisioner::class, SchemaProvisioner::class or SqliteFileProvisioner::class; null for none.
+                'provisioner' => null,
+                // Put in front of the slug to name a tenant's database, schema or file.
+                'prefix' => 'tenant_',
+                // The connection the database and schema provisioners run CREATE/DROP on; null uses the landlord's.
+                'provisioning_connection' => null,
+                // Where SqliteFileProvisioner keeps the files, relative to doctrine.base_path.
+                'sqlite_directory' => 'data/tenants',
                 'resolvers' => [HeaderResolver::class, SubdomainResolver::class],
                 'header' => 'X-Tenant',
                 'base_domain' => null,
@@ -92,6 +109,10 @@ final readonly class ConfigProvider
             TenantMiddleware::class => AttributeFactory::class,
             TenantConnectionParams::class => AttributeFactory::class,
             LandlordMigrations::class => AttributeFactory::class,
+            Provisioning::class => ProvisioningFactory::class,
+            DatabaseProvisioner::class => ProvisionerFactory::class,
+            SchemaProvisioner::class => ProvisionerFactory::class,
+            SqliteFileProvisioner::class => ProvisionerFactory::class,
             TenantOptionListener::class => AttributeFactory::class,
         ];
 
