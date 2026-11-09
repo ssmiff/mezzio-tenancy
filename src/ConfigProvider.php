@@ -17,6 +17,7 @@ use Ssmiff\MezzioTenancy\Console\TenantCreateCommand;
 use Ssmiff\MezzioTenancy\Console\TenantDeleteCommand;
 use Ssmiff\MezzioTenancy\Console\TenantListCommand;
 use Ssmiff\MezzioTenancy\Console\TenantOptionListener;
+use Ssmiff\MezzioTenancy\Console\TenantRunAsCommand;
 use Ssmiff\MezzioTenancy\Doctrine\LandlordMigrations;
 use Ssmiff\MezzioTenancy\Doctrine\TenantConnectionParams;
 use Ssmiff\MezzioTenancy\Factory\ChainResolverFactory;
@@ -46,6 +47,7 @@ final readonly class ConfigProvider
         'tenancy:delete' => TenantDeleteCommand::class,
         'tenancy:list' => TenantListCommand::class,
         'tenancy:migrate' => TenancyMigrateCommand::class,
+        'tenancy:run-as' => TenantRunAsCommand::class,
     ];
 
     /** @return array<string, class-string> */

@@ -29,6 +29,12 @@ final readonly class Options
         return self::asStrings($input->getOption($name));
     }
 
+    /** @return list<string> */
+    public static function arguments(InputInterface $input, string $name): array
+    {
+        return self::asStrings($input->getArgument($name));
+    }
+
     private static function asString(mixed $value): ?string
     {
         return is_string($value) ? $value : null;

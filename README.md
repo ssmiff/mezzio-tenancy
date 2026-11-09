@@ -231,6 +231,23 @@ $switcher->run($tenant, function (Tenant $tenant) use ($registry) {
 `TenantSwitcher::run()` activates the tenant, runs the callback, and restores whichever tenant (or none) was active before.
 Inside the callback, get the entity manager from the `Registry` or the container; an object injected earlier still points at the earlier tenant.
 
+### From the console: `tenancy:run-as`
+
+Run any console command with a tenant active. Put `--` before the command when it has options of its own:
+
+```
+vendor/bin/laminas tenancy:run-as acme -- app:send-invoices --since=yesterday
+vendor/bin/laminas tenancy:run-as acme -- migrations:status
+```
+
+The tenant is active for the whole command, so the command and the services it is built with see the tenant in
+`TenantContext` and get its `tenant` connection and entity manager; the previous state is restored afterwards. The exit
+code is the command's own.
+
+Migrations and ORM commands are given `--tenant=<slug>` instead, because they pick their connection with `--conn`
+rather than from the active tenant; run-as on them is the same as passing `--tenant` yourself. Unknown and inactive
+tenants are refused. To run a command for every tenant, use a loop in the shell, or `tenancy:migrate` for migrations.
+
 ## Console
 
 Every migrations and ORM command gets `--tenant=<slug>`, which implies `--conn=tenant`:
@@ -248,6 +265,7 @@ vendor/bin/laminas orm:validate-schema --tenant=acme
 | `tenancy:create <slug> <name> [--param=key=value ...] [--no-provision]` | register a tenant and, with a provisioner, create its storage |
 | `tenancy:delete <slug> [--drop [--force]]` | unregister a tenant; with `--drop`, destroy its storage |
 | `tenancy:list` | list tenants |
+| `tenancy:run-as <slug> -- <command> [args...]` | run a console command with the tenant active |
 | `tenancy:migrate [--only=<slug>]` | run `migrations:migrate --tenant=<slug>` for each active tenant, one process per tenant |
 
 Tenants are migrated in separate processes because Doctrine Migrations keeps one connection per process.
