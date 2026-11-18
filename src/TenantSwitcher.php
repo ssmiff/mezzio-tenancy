@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Ssmiff\MezzioTenancy;
 
 use Ssmiff\MezzioDoctrine\Registry;
-use Ssmiff\MezzioTenancy\Tenant;
 
 final readonly class TenantSwitcher
 {
